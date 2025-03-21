@@ -29,7 +29,7 @@ stages:
       packages:
       - git
       - dkms
-      - linux-headers-$(uname -r)
+      - linux-headers-generic
 
   - name: build-xone
     type: shell
