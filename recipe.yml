@@ -5,7 +5,7 @@ stages:
   base: ghcr.io/vanilla-os/desktop:main # Optionally, Replace this image URL with a different one i.e. nvidia:main, etc
   singlelayer: false
   labels:
-    maintainer: self-maintained # Optionally, Replace this with your name
+    maintainer: mambuco
   args:
     DEBIAN_FRONTEND: noninteractive # Set the image environment as non-interactive
   
@@ -29,14 +29,16 @@ stages:
       packages:
       - git
       - dkms
-      - linux-headers-generic
+      - curl
+      - cabextract
+      - linux-headers-amd64
 
   - name: build-xone
     type: shell
     commands:
-    - git clone https://github.com/medusalix/xone
+    - git clone https://github.com/mambucodev/xone
     - cd xone
-    - ./install.sh
+    - version=$(cat /usr/share/vanilla/kernel-version) ./install.sh
 
 #  - name: example-modules # Sample module demonstrating importing local and remote modules
 #    type: includes
