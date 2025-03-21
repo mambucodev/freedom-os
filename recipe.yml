@@ -38,7 +38,7 @@ stages:
     commands:
     - git clone https://github.com/mambucodev/xone
     - cd xone
-    - version=$(cat /usr/share/vanilla/kernel-version) ./install.sh
+    - ./install.sh $(cat /usr/share/vanilla/kernel-version)
 
 #  - name: example-modules # Sample module demonstrating importing local and remote modules
 #    type: includes
