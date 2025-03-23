@@ -79,7 +79,6 @@ stages:
     type: shell
     commands:
       - rm /etc/apt/sources.list.d/sid.sources
-      - rm /etc/apt/sources.list.d/experimental.sources
       - rm /etc/apt/sources.list.d/trixie.sources
       - mv /etc/vanilla-base.sources /etc/apt/sources.list.d/
       - apt update
