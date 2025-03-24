@@ -1,126 +1,121 @@
 name: Freedom OS # Replace this name with your image name
 id: freedomos # Replace this ID with your image ID
 stages:
-- id: build
-  base: ghcr.io/vanilla-os/desktop:main # Optionally, Replace this image URL with a different one i.e. nvidia:main, etc
-  singlelayer: false
-  labels:
-    maintainer: mambuco
-  args:
-    DEBIAN_FRONTEND: noninteractive # Set the image environment as non-interactive
+  - id: build
+    base: ghcr.io/vanilla-os/desktop:main # Optionally, Replace this image URL with a different one i.e. nvidia:main, etc
+    singlelayer: false
+    labels:
+      maintainer: mambuco
+    args:
+      DEBIAN_FRONTEND: noninteractive # Set the image environment as non-interactive
 
-  # Commands to run first before building the modules
-  runs:
-    commands:
-      - echo 'APT::Install-Recommends "1";' > /etc/apt/apt.conf.d/01norecommends
+    # Commands to run first before building the modules
+    runs:
+      commands:
+        - echo 'APT::Install-Recommends "1";' > /etc/apt/apt.conf.d/01norecommends
 
-  modules:
-  - name: init-setup
-    type: shell
-    commands:
-    - lpkg --unlock
-    - apt-get update
-
-  # Put your custom actions below this comment
-
-  - name: prerequisites
-    type: apt
-    source:
-      packages:
-      - git
-      - dkms
-      - curl
-      - cabextract
-      - linux-headers-amd64
-
-  - name: install-xone
-    type: shell
-    commands:
-    - cd /tmp
-    - git clone https://github.com/mambucodev/xone
-    - cd xone
-    - ./install.sh
-
-  - name: install-onepassword
-    type: shell
-    commands:
-    - cd /tmp
-    - curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
-    - echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' | sudo tee /etc/apt/sources.list.d/1password.list
-    - mkdir -p /etc/debsig/policies/AC2D62742012EA22/
-    - curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol
-    - mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
-    - curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
-    - apt update && sudo apt install 1password
-    - mkdir /etc/1password
-    - touch /etc/1password/custom_allowed_browsers
-    - echo "zen-bin" | tee -a /etc/1password/custom_allowed_browsers
-
-  - name: add-debian-sources
-    type: shell
-    commands:
-      - mv /etc/sid.sources /etc/apt/sources.list.d/
-      - mv /etc/trixie.sources /etc/apt/sources.list.d/
-      - mv /etc/apt/sources.list.d/vanilla-base.sources /etc/
-      - apt update
-
-  - name: install-gnome-48
-    type: shell
-    commands:
-      - apt install -t trixie --fix-missing --fix-broken -y libtinysparql-3.0-0=3.8.2-5+b1
-      - apt-mark hold libtinysparql-3.0-0
-
-      - apt-mark unhold gnome-control-center
-
-      - apt install -t sid --fix-missing --fix-broken -y gdm3 xorg gnome-session gnome-shell gnome-control-center gnome-shell-extensions gnome-browser-connector dbus-x11 evolution-data-server geoclue-2.0 gjs mutter xdg-desktop-portal xdg-desktop-portal-gnome xdg-desktop-portal-gtk gsettings-desktop-schemas libatk-adaptor libnotify-bin ibus-gtk ibus-gtk3 ibus-gtk4 libtracker-sparql-3.0-0 libglib2.0-bin libblockdev-crypto3 libpam-gnome-keyring libproxy1-plugin-gsettings libwmf0.2-7-gtk libgdk-pixbuf2.0-bin libjxl-gdk-pixbuf libavif-gdk-pixbuf heif-gdk-pixbuf webp-pixbuf-loader ffmpegthumbnailer gnome-epub-thumbnailer ooo-thumbnailer nautilus nautilus-share python3-nautilus gnome-bluetooth-sendto gnome-color-manager gnome-menus gnome-online-accounts blackbox-terminal adwaita-icon-theme
-      - apt-mark hold libtracker-sparql-3.0-0 tracker-miner-fs
-
-  - name: remove-debian-sources
-    type: shell
-    commands:
-      - rm /etc/apt/sources.list.d/sid.sources
-      - rm /etc/apt/sources.list.d/trixie.sources
-      - mv /etc/vanilla-base.sources /etc/apt/sources.list.d/
-      - apt update
-
-#  - name: example-modules # Sample module demonstrating importing local and remote modules
-#    type: includes
-#    includes:
-#      - modules/50-install-debs.yml # Sample local module present in this repository
-#      - gh:vanilla-os/dev-image:main:modules/00-basics.yml # Sample GitHub remote module in the format: `gh:your-name/your-repo:branch:modules/file.yml`
-#      - https://raw.githubusercontent.com/Vanilla-OS/dev-image/main/modules/05-go.yml # Sample full URL remote module
-
-  # Put your custom actions above this comment
-
-  - name: set-image-name-abroot
-    type: includes
-    includes:
-      - modules/80-set-image-abroot-config.yml
-
-  - name: cleanup
-    type: shell
-    commands:
-    - apt-get autoremove -y
-    - apt-get clean
-    - lpkg --lock
-
-  - name: fsguard
-    type: fsguard
-    CustomFsGuard: false
-    FsGuardLocation: "/usr/sbin/FsGuard"
-    GenerateKey: true
-    FilelistPaths: ["/usr/bin"]
     modules:
-      - name: remove-prev-fsguard
+      - name: init-setup
         type: shell
         commands:
-          - rm -rf /FsGuard
-          - rm -f ./minisign.pub ./minisign.key
-          - chmod +x /usr/sbin/init
+          - lpkg --unlock
+          - apt-get update
 
-  - name: cleanup2
-    type: shell
-    commands:
-      - rm -rf /tmp/*
-      - rm -rf /var/tmp/*
-      - rm -rf /sources
+      # Put your custom actions below this comment
+
+      - name: prerequisites
+        type: apt
+        source:
+          packages:
+            - git
+            - dkms
+            - curl
+            - cabextract
+            - linux-headers-amd64
+
+      - name: install-xone
+        type: shell
+        commands:
+          - cd /tmp
+          - git clone https://github.com/mambucodev/xone
+          - cd xone
+          - ./install.sh
+
+      - name: install-onepassword
+        type: shell
+        commands:
+          - cd /tmp
+          - curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
+          - echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' | sudo tee /etc/apt/sources.list.d/1password.list
+          - mkdir -p /etc/debsig/policies/AC2D62742012EA22/
+          - curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol
+          - mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
+          - curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+          - apt update && sudo apt install 1password
+          - mkdir /etc/1password
+          - touch /etc/1password/custom_allowed_browsers
+          - echo "zen-bin" | tee -a /etc/1password/custom_allowed_browsers
+
+      - name: add-debian-sources
+        type: shell
+        commands:
+          - mv /etc/sid.sources /etc/apt/sources.list.d/
+          - mv /etc/trixie.sources /etc/apt/sources.list.d/
+          - mv /etc/apt/sources.list.d/vanilla-base.sources /etc/
+          - apt update
+
+      - name: install-gnome-48
+        type: shell
+        commands:
+          - apt-mark unhold gnome-control-center
+          - apt install -t sid --fix-missing --fix-broken -y gdm3 xorg gnome-session gnome-shell gnome-control-center gnome-shell-extensions gnome-browser-connector dbus-x11 evolution-data-server geoclue-2.0 gjs mutter xdg-desktop-portal xdg-desktop-portal-gnome xdg-desktop-portal-gtk gsettings-desktop-schemas libatk-adaptor libnotify-bin ibus-gtk ibus-gtk3 ibus-gtk4 libglib2.0-bin libblockdev-crypto3 libpam-gnome-keyring libproxy1-plugin-gsettings libwmf0.2-7-gtk libgdk-pixbuf2.0-bin libjxl-gdk-pixbuf libavif-gdk-pixbuf heif-gdk-pixbuf webp-pixbuf-loader ffmpegthumbnailer gnome-epub-thumbnailer ooo-thumbnailer nautilus nautilus-share python3-nautilus gnome-bluetooth-sendto gnome-color-manager gnome-menus gnome-online-accounts blackbox-terminal adwaita-icon-theme
+
+      - name: remove-debian-sources
+        type: shell
+        commands:
+          - rm /etc/apt/sources.list.d/sid.sources
+          - rm /etc/apt/sources.list.d/trixie.sources
+          - mv /etc/vanilla-base.sources /etc/apt/sources.list.d/
+          - apt update
+
+      #  - name: example-modules # Sample module demonstrating importing local and remote modules
+      #    type: includes
+      #    includes:
+      #      - modules/50-install-debs.yml # Sample local module present in this repository
+      #      - gh:vanilla-os/dev-image:main:modules/00-basics.yml # Sample GitHub remote module in the format: `gh:your-name/your-repo:branch:modules/file.yml`
+      #      - https://raw.githubusercontent.com/Vanilla-OS/dev-image/main/modules/05-go.yml # Sample full URL remote module
+
+      # Put your custom actions above this comment
+
+      - name: set-image-name-abroot
+        type: includes
+        includes:
+          - modules/80-set-image-abroot-config.yml
+
+      - name: cleanup
+        type: shell
+        commands:
+          - apt-get autoremove -y
+          - apt-get clean
+          - lpkg --lock
+
+      - name: fsguard
+        type: fsguard
+        CustomFsGuard: false
+        FsGuardLocation: "/usr/sbin/FsGuard"
+        GenerateKey: true
+        FilelistPaths: ["/usr/bin"]
+        modules:
+          - name: remove-prev-fsguard
+            type: shell
+            commands:
+              - rm -rf /FsGuard
+              - rm -f ./minisign.pub ./minisign.key
+              - chmod +x /usr/sbin/init
+
+      - name: cleanup2
+        type: shell
+        commands:
+          - rm -rf /tmp/*
+          - rm -rf /var/tmp/*
+          - rm -rf /sources
